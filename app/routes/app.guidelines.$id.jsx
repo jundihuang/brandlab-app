@@ -10,7 +10,6 @@ import {
   Badge,
   Banner,
   DataTable,
-  Button,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";

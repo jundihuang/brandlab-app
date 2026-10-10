@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { json } from "@remix-run/node";
-import { useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
+import { useLoaderData, useSubmit, useNavigation, useActionData } from "@remix-run/react";
 import {
-  Page, Layout, Card, FormLayout, TextField, Select, Button, BlockStack, Text, Banner
+  Page, Layout, Card, FormLayout, TextField, Select, Button, Banner
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { brandlabBackendUrl, brandlabHeaders } from "../lib/brandlab.server";
@@ -52,9 +52,9 @@ const LANGUAGES = [
 
 export default function Onboarding() {
   const { config, shopDomain } = useLoaderData();
+  const actionData = useActionData();
   const submit = useSubmit();
   const navigation = useNavigation();
-  const [toast, setToast] = useState(null);
 
   const [sourceLanguage, setSourceLanguage] = useState(config.source_language || "en");
   const [workingLanguage, setWorkingLanguage] = useState(config.working_language || "en");
@@ -65,14 +65,14 @@ export default function Onboarding() {
 
   const handleSubmit = () => {
     submit({ source_language: sourceLanguage, working_language: workingLanguage, target_locales: targetLocales, brand_tone: brandTone }, { method: "PUT" });
-    setToast("Settings saved");
   };
 
   return (
     <Page title="Onboarding" subtitle={`Configure BrandLab for ${shopDomain}`}>
       <Layout>
         <Layout.Section>
-          {toast && <Banner tone="success" onDismiss={() => setToast(null)}>{toast}</Banner>}
+          {actionData?.success && <Banner tone="success">Settings saved</Banner>}
+          {actionData && !actionData.success && <Banner tone="critical">Failed to save settings. Please try again.</Banner>}
           <Card>
             <FormLayout>
               <Select label="Source language (store primary)" options={LANGUAGES} value={sourceLanguage} onChange={setSourceLanguage} />

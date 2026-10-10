@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
 import {
   Page, Layout, Card, DataTable, Button, TextField, Select, Modal, BlockStack,
-  Text, Badge, InlineStack, EmptyState
+  Badge, InlineStack, EmptyState
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 
@@ -70,7 +70,7 @@ export const action = async ({ request }) => {
 };
 
 export default function Guidelines() {
-  const { items, total, shopDomain } = useLoaderData();
+  const { items, total } = useLoaderData();
   const submit = useSubmit();
   const navigation = useNavigation();
   const [modalOpen, setModalOpen] = useState(false);
