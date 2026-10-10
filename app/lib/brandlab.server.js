@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 
 export function brandlabHeaders(shopDomain, { json = false } = {}) {
@@ -12,4 +14,18 @@ export function brandlabHeaders(shopDomain, { json = false } = {}) {
 export function brandlabBackendUrl(path, searchParams = new URLSearchParams()) {
   const query = searchParams.toString();
   return `${BACKEND_URL}/admin_api/v1/brandlab/${path}${query ? `?${query}` : ""}`;
+}
+
+const WEBHOOK_CONTENT_FIELDS = {
+  product: ["title", "body_html", "product_type"],
+  collection: ["title", "body_html"],
+  page: ["title", "body_html"],
+  blog: ["title"],
+};
+
+export function webhookSourceDigest(resourceType, payload) {
+  const fields = WEBHOOK_CONTENT_FIELDS[resourceType];
+  if (!fields) return undefined;
+  const content = Object.fromEntries(fields.map((field) => [field, payload[field] ?? ""]));
+  return crypto.createHash("sha256").update(JSON.stringify(content)).digest("hex");
 }

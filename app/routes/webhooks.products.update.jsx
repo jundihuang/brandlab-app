@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import { brandlabBackendUrl, brandlabHeaders } from "../lib/brandlab.server";
+import { brandlabBackendUrl, brandlabHeaders, webhookSourceDigest } from "../lib/brandlab.server";
 
 export const action = async ({ request }) => {
   const { payload, shop } = await authenticate.webhook(request);
@@ -10,6 +10,7 @@ export const action = async ({ request }) => {
     body: JSON.stringify({
       resource_gid: payload.admin_graphql_api_id,
       resource_type: "product",
+      source_digest: webhookSourceDigest("product", payload),
       changed_at: payload.updated_at,
     }),
   });
