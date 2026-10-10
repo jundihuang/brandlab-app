@@ -25,14 +25,6 @@ api_version = "2027-01"
   uri = "/webhooks/collections/update"
   topics = [ "collections/update" ]
 
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/pages/update"
-  topics = [ "pages/update" ]
-
-  [[webhooks.subscriptions]]
-  uri = "/webhooks/blogs/update"
-  topics = [ "blogs/update" ]
-
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_products,write_products,read_content,write_content,write_translations,read_translations,read_locales,write_locales"
