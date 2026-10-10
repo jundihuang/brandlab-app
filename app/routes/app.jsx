@@ -26,6 +26,9 @@ export default function App() {
         <Link to="/app/guidelines">Guidelines</Link>
         <Link to="/app/scan">Content Scan</Link>
         <Link to="/app/audit">Audit</Link>
+        <Link to="/app/terminology">Terminology</Link>
+        <Link to="/app/glossary">Glossary</Link>
+        <Link to="/app/jobs">Translation Jobs</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
