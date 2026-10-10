@@ -22,6 +22,7 @@ export const loader = async ({ request, params }) => {
 export const action = async ({ request, params }) => {
   const { session } = await authenticate.admin(request);
   const form = await request.formData();
+  const shopAccessToken = session.accessToken;
   const intent = form.get("intent");
   const headers = brandlabHeaders(session.shop, { json: true });
   let path = `jobs/${params.id}`;
@@ -36,7 +37,7 @@ export const action = async ({ request, params }) => {
     body = JSON.stringify({ item_ids: form.getAll("item_ids[]").map(Number) });
   } else if (intent === "publish") {
     path += "/publish";
-    body = JSON.stringify({ item_ids: form.getAll("item_ids[]").map(Number) });
+    body = JSON.stringify({ item_ids: form.getAll("item_ids[]").map(Number), access_token: shopAccessToken });
   } else if (intent === "review") {
     path += `/items/${form.get("item_id")}`;
     method = "PUT";
