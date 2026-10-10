@@ -29,6 +29,8 @@ export default function App() {
         <Link to="/app/terminology">Terminology</Link>
         <Link to="/app/glossary">Glossary</Link>
         <Link to="/app/jobs">Translation Jobs</Link>
+        <Link to="/app/imports">Imports</Link>
+        <Link to="/app/publish-log">Publish Log</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
