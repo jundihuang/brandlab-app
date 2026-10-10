@@ -2,7 +2,7 @@ import { json } from "@remix-run/node";
 import { useLoaderData, useFetcher } from "@remix-run/react";
 import {
   Page, Layout, Card, DataTable, Badge, Banner, Button, TextField, BlockStack,
-  InlineStack, EmptyState, Text, Checkbox,
+  InlineStack, EmptyState, Text, Checkbox, Box,
 } from "@shopify/polaris";
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { useRef, useState } from "react";
@@ -142,12 +142,16 @@ export default function Imports() {
               <BlockStack gap="300">
                 <Text as="h2" variant="headingMd">Upload CSV</Text>
                 <InlineStack gap="300" blockAlign="center">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(event) => setFile(event.target.files?.[0] || null)}
-                  />
+                  <Box visuallyHidden>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={(event) => setFile(event.target.files?.[0] || null)}
+                    />
+                  </Box>
+                  <Button onClick={() => fileRef.current?.click()}>Choose CSV</Button>
+                  {file ? <Text as="span">{file.name}</Text> : <Text as="span" tone="subdued">No file selected</Text>}
                   <Button variant="primary" loading={busy} disabled={!file} onClick={upload}>Stage CSV</Button>
                 </InlineStack>
                 <Text tone="subdued" as="p">

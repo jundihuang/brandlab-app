@@ -13,6 +13,7 @@ import {
   Banner,
   DataTable,
   EmptyState,
+  InlineGrid,
 } from "@shopify/polaris";
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -161,7 +162,7 @@ export default function AuditPage() {
               </Banner>
             ) : null}
 
-            <InlineStack gap="400">
+            <InlineGrid columns={{ xs: 1, sm: 2, lg: 4 }} gap="400">
               {Object.entries(STATUS_META).map(([status, meta]) => (
                 <Card key={status} padding="400">
                   <BlockStack gap="200">
@@ -172,7 +173,7 @@ export default function AuditPage() {
                   </BlockStack>
                 </Card>
               ))}
-            </InlineStack>
+            </InlineGrid>
 
             <Card padding="0">
               {rows.length === 0 ? (

@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { useLoaderData, useSubmit, useNavigation, useActionData } from "@remix-run/react";
 import {
   Page, Layout, Card, DataTable, Button, TextField, Select, BlockStack,
-  InlineStack, Text, Banner, EmptyState
+  InlineStack, Text, Banner, EmptyState, Checkbox
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -79,14 +79,13 @@ export default function Terminology() {
 
   const rows = items.map((item) => {
     const checkbox = (
-      <label key={`sel-${item.source_term}`} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <input
-          type="checkbox"
-          checked={Boolean(selected[item.source_term])}
-          onChange={(e) => setSelected((s) => ({ ...s, [item.source_term]: e.target.checked }))}
-        />
-        <span>{item.source_term}</span>
-      </label>
+      <Checkbox
+        key={`sel-${item.source_term}`}
+        label={`Select ${item.source_term}`}
+        labelHidden
+        checked={Boolean(selected[item.source_term])}
+        onChange={(checked) => setSelected((s) => ({ ...s, [item.source_term]: checked }))}
+      />
     );
     const typeSelect = (
       <Select
@@ -108,7 +107,7 @@ export default function Terminology() {
       />
     );
     const context = <Text variant="bodySm" as="span" tone="subdued">{item.sample_context}</Text>;
-    return [checkbox, String(item.occurrences), context, typeSelect, targetInput];
+    return [checkbox, item.source_term, String(item.occurrences), context, typeSelect, targetInput];
   });
 
   const handleConfirm = () => {
@@ -152,8 +151,8 @@ export default function Terminology() {
                 </EmptyState>
               ) : (
                 <DataTable
-                  columnContentTypes={["text", "numeric", "text", "text", "text"]}
-                  headings={["Term", "Occurrences", "Context", "Type", "Target translation"]}
+                  columnContentTypes={["text", "text", "numeric", "text", "text", "text"]}
+                  headings={["", "Term", "Occurrences", "Context", "Type", "Target translation"]}
                   rows={rows}
                 />
               )}

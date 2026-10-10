@@ -1,7 +1,7 @@
 import { json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import {
-  Page, Layout, Card, BlockStack, Grid, Text, Badge, Banner, List, InlineStack,
+  Page, Layout, Card, BlockStack, Box, InlineGrid, Text, Badge, Banner, List, InlineStack,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -47,33 +47,33 @@ export default function Dashboard() {
             {backendError ? <Banner tone="critical" title="Backend unavailable">{backendError}</Banner> : null}
             {data ? (
               <>
-                <Grid columns={{ xs: 1, md: 2, lg: 4 }} gap="400">
+                <InlineGrid columns={{ xs: 1, sm: 2, lg: 4 }} gap="400">
                   <Metric label="Source snapshots" value={data.snapshots.total} url="/app/scan" />
                   <Metric label="Translation jobs" value={data.jobs.total} url="/app/jobs" />
                   <Metric label="Stale translations" value={data.items.stale} tone="warning" url="/app/jobs" />
                   <Metric label="Published records" value={data.publishes.total} tone="success" url="/app/publish-log" />
-                </Grid>
+                </InlineGrid>
 
                 <Card>
                   <BlockStack gap="400">
                     <Text as="h2" variant="headingMd">Translation pipeline</Text>
-                    <Grid columns={{ xs: 2, md: 4 }} gap="300">
+                    <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="300">
                       <Metric label="Pending" value={data.items.by_status.pending} url="/app/jobs" />
                       <Metric label="Review" value={(data.items.by_status.pending_review || 0) + (data.items.by_status.pending_expert || 0)} tone="attention" url="/app/jobs" />
                       <Metric label="Approved" value={data.items.by_status.approved} tone="success" url="/app/jobs" />
                       <Metric label="Failed" value={data.items.by_status.failed} tone="critical" url="/app/jobs" />
-                    </Grid>
+                    </InlineGrid>
                     <Text tone="subdued" as="p">Average Trust Score: {data.items.average_trust_score ?? "-"}</Text>
                   </BlockStack>
                 </Card>
 
-                <Grid columns={{ xs: 1, md: 2 }} gap="400">
+                <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
                   <Card>
                     <BlockStack gap="300">
                       <Text as="h2" variant="headingMd">Recent jobs</Text>
                       {data.jobs.recent.map((job) => (
                         <InlineStack key={job.id} align="space-between" blockAlign="center">
-                          <Link to={`/app/jobs/${job.id}`}>#{job.id} · {job.target_locale.toUpperCase()} {job.market ? `· ${job.market}` : ""}</Link>
+                          <Box minWidth="0"><Link to={`/app/jobs/${job.id}`}>#{job.id} · {job.target_locale.toUpperCase()} {job.market ? `· ${job.market}` : ""}</Link></Box>
                           <Badge tone={job.status === "completed" ? "success" : job.status === "failed" ? "critical" : "attention"}>{job.status}</Badge>
                         </InlineStack>
                       ))}
@@ -94,7 +94,7 @@ export default function Dashboard() {
                       </List>
                     </BlockStack>
                   </Card>
-                </Grid>
+                </InlineGrid>
               </>
             ) : null}
           </BlockStack>
