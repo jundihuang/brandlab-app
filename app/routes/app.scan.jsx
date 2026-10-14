@@ -14,6 +14,7 @@ import {
   DataTable,
   EmptyState,
   Checkbox,
+  Select,
 } from "@shopify/polaris";
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -25,6 +26,21 @@ const RESOURCE_TYPES = [
   { label: "Pages", value: "page" },
   { label: "Blogs", value: "blog" },
 ];
+
+const STATUS_OPTIONS = [
+  { label: "All statuses", value: "" },
+  { label: "Pending", value: "pending" },
+  { label: "Current", value: "current" },
+  { label: "Modified", value: "modified" },
+  { label: "Missing", value: "missing" },
+];
+
+const STATUS_TONE = {
+  pending: "attention",
+  current: "success",
+  modified: "warning",
+  missing: "critical",
+};
 
 async function readApi(response) {
   const payload = await response.json().catch(() => ({}));
@@ -39,11 +55,13 @@ export async function loader({ request }) {
   const shopDomain = session.shop;
   const url = new URL(request.url);
   const resourceType = url.searchParams.get("resource_type");
-  const stale = url.searchParams.get("stale");
+  const status = url.searchParams.get("status");
+  const locale = url.searchParams.get("locale");
 
   const params = new URLSearchParams({ shop_domain: shopDomain, per_page: "50" });
   if (resourceType) params.set("resource_type", resourceType);
-  if (stale === "true" || stale === "false") params.set("stale", stale);
+  if (status) params.set("status", status);
+  if (locale) params.set("locale", locale);
 
   try {
     const data = await readApi(
@@ -51,13 +69,14 @@ export async function loader({ request }) {
         headers: brandlabHeaders(shopDomain),
       }),
     );
-    return json({ ...data, shopDomain, backendError: null });
+    return json({ ...data, shopDomain, backendError: null, filters: { resourceType, status, locale } });
   } catch (error) {
     return json({
       items: [],
       total: 0,
       shopDomain,
       backendError: error instanceof Error ? error.message : "Backend unavailable",
+      filters: { resourceType, status, locale },
     });
   }
 }
@@ -97,28 +116,32 @@ function formatDateTime(value) {
 }
 
 export default function ScanPage() {
-  const { items, total, shopDomain, backendError } = useLoaderData();
+  const { items, total, shopDomain, backendError, filters } = useLoaderData();
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
   const shopify = useAppBridge();
   const [selectedTypes, setSelectedTypes] = useState(RESOURCE_TYPES.map(({ value }) => value));
+  const [statusFilter, setStatusFilter] = useState(filters?.status || "");
+  const [localeFilter, setLocaleFilter] = useState(filters?.locale || "");
 
   const isScanning = fetcher.state !== "idle";
   const apiError = backendError || fetcher.data?.error;
 
   const rows = useMemo(
     () =>
-      items.map((snapshot) => [
-        snapshot.resource_type,
-        snapshot.handle || "—",
-        snapshot.content?.title || "—",
-        <Badge tone={snapshot.stale ? "warning" : "success"} key={`stale-${snapshot.id}`}>
-          {snapshot.stale ? "Changed" : "Current"}
+      items.map((item) => [
+        item.resource_type,
+        item.field_key,
+        item.locale,
+        item.market || "All",
+        String(item.source_content || "—").slice(0, 60),
+        <Badge tone={STATUS_TONE[item.status] || "default"} key={`status-${item.id}`}>
+          {item.status}
         </Badge>,
-        <code key={`digest-${snapshot.id}`} style={{ fontSize: "0.75em" }}>
-          {snapshot.digest?.slice(0, 12)}
+        <code key={`digest-${item.id}`} style={{ fontSize: "0.75em" }}>
+          {item.source_digest?.slice(0, 12)}
         </code>,
-        formatDateTime(snapshot.scanned_at),
+        formatDateTime(item.last_seen_at),
       ]),
     [items],
   );
@@ -138,14 +161,21 @@ export default function ScanPage() {
 
   useEffect(() => {
     if (fetcher.data?.success) {
-    shopify.toast.show("Scan queued. Results will appear as the background job completes.");
+      shopify.toast.show("Scan queued. Results will appear as the background job completes.");
     }
   }, [fetcher.data?.success, shopify]);
+
+  const applyFilters = useCallback(() => {
+    const params = new URLSearchParams();
+    if (statusFilter) params.set("status", statusFilter);
+    if (localeFilter) params.set("locale", localeFilter);
+    window.location.search = params.toString();
+  }, [statusFilter, localeFilter]);
 
   return (
     <Page
       title="Content scan"
-      subtitle={`${total} snapshots for ${shopDomain}`}
+      subtitle={`${total} inventory items for ${shopDomain}`}
       primaryAction={{ content: "Queue scan", onAction: queueScan, loading: isScanning }}
     >
       <TitleBar title="Content scan">
@@ -164,7 +194,7 @@ export default function ScanPage() {
             {apiError ? <Banner tone="critical" title="Scan API error">{apiError}</Banner> : null}
             {fetcher.data?.success ? (
               <Banner tone="info" title="Scan queued">
-                Resource types: {fetcher.data.resourceTypes?.join(", ")}. Refresh shortly to see new snapshots and audit results.
+                Resource types: {fetcher.data.resourceTypes?.join(", ")}. Refresh shortly to see field-level inventory items.
               </Banner>
             ) : null}
 
@@ -179,6 +209,31 @@ export default function ScanPage() {
                       onChange={(checked) => toggleType(type.value, checked)}
                     />
                   ))}
+                </InlineStack>
+                <InlineStack gap="300" align="end">
+                  <div style={{ minWidth: 140 }}>
+                    <Select
+                      label="Status"
+                      labelInline
+                      options={STATUS_OPTIONS}
+                      onChange={setStatusFilter}
+                      value={statusFilter}
+                    />
+                  </div>
+                  <div style={{ minWidth: 120 }}>
+                    <Select
+                      label="Locale"
+                      labelInline
+                      options={[
+                        { label: "All locales", value: "" },
+                        { label: "en", value: "en" },
+                        { label: "it", value: "it" },
+                      ]}
+                      onChange={setLocaleFilter}
+                      value={localeFilter}
+                    />
+                  </div>
+                  <Button onClick={applyFilters}>Filter</Button>
                 </InlineStack>
                 <InlineStack gap="300">
                   <Button
@@ -199,13 +254,13 @@ export default function ScanPage() {
             <Card padding="0">
               {rows.length === 0 ? (
                 <EmptyState
-                  heading="No content snapshots"
-                  body="Queue a scan to create the source baseline used by guidelines, audits, and translation jobs."
+                  heading="No content inventory items"
+                  body="Queue a scan to discover field-level translatable content for each resource."
                 />
               ) : (
                 <DataTable
-                  columnContentTypes={["text", "text", "text", "text", "text", "text"]}
-                  headings={["Type", "Handle", "Title", "State", "Digest", "Scanned"]}
+                  columnContentTypes={["text", "text", "text", "text", "text", "text", "text", "text"]}
+                  headings={["Type", "Field", "Locale", "Market", "Content", "Status", "Digest", "Last seen"]}
                   rows={rows}
                   increasedVerticalDensity
                 />
@@ -217,8 +272,8 @@ export default function ScanPage() {
                 Scan contract
               </Text>
               <BlockStack gap="200">
-                <Text as="p">Every resource is stored as an immutable source snapshot with a digest.</Text>
-                <Text as="p">Changed Shopify content is marked stale so linked translations can be queued for refresh.</Text>
+                <Text as="p">Each translatable field is stored as an inventory item with its own digest.</Text>
+                <Text as="p">New fields are pending; unchanged fields become current; changed fields become modified.</Text>
                 <Text as="p">The scan job automatically runs an existing-content audit against active guidelines.</Text>
               </BlockStack>
             </Card>
