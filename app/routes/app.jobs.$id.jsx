@@ -7,7 +7,7 @@ import {
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { authenticate } from "../shopify.server";
-import { brandlabBackendUrl, brandlabHeaders } from "../lib/brandlab.server";
+import { brandlabBackendUrl, brandlabHeaders, brandlabResponseJson } from "../lib/brandlab.server";
 
 export const loader = async ({ request, params }) => {
   const { session } = await authenticate.admin(request);
@@ -15,7 +15,20 @@ export const loader = async ({ request, params }) => {
     brandlabBackendUrl(`jobs/${params.id}`, new URLSearchParams({ shop_domain: session.shop })),
     { headers: brandlabHeaders(session.shop) },
   );
-  const data = await response.json();
+  const data = await brandlabResponseJson(response);
+
+  if (!response.ok || !data.job) {
+    return json(
+      {
+        job: null,
+        items: [],
+        summary: {},
+        error_message: data.error_message || data.error || "Job not found",
+      },
+      { status: response.ok ? 404 : response.status }
+    );
+  }
+
   return json(data, { status: response.status });
 };
 
@@ -50,7 +63,7 @@ export const action = async ({ request, params }) => {
   }
 
   const response = await fetch(brandlabBackendUrl(path), { method, headers, body });
-  const data = await response.json();
+  const data = await brandlabResponseJson(response, { error_message: "Operation failed" });
   return json(data, { status: response.status });
 };
 
@@ -121,6 +134,21 @@ export default function JobDetail() {
       </InlineStack>,
     ];
   }), [items, selected, submit, busy]);
+
+  if (!job) {
+    return (
+      <Page title="Translation job" backAction={{ url: "/app/jobs" }}>
+        <TitleBar title="Translation job" />
+        <Layout>
+          <Layout.Section>
+            <Banner tone="critical" title="Job unavailable">
+              {error_message || "This job could not be loaded."}
+            </Banner>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   const reviewAction = () => {
     const data = new FormData();

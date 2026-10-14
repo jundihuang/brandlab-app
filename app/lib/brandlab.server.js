@@ -11,6 +11,20 @@ export function brandlabHeaders(shopDomain, { json = false } = {}) {
   return headers;
 }
 
+export async function brandlabResponseJson(response, fallback = {}) {
+  const text = await response.text();
+  if (!text) return fallback;
+
+  try {
+    return JSON.parse(text);
+  } catch (_error) {
+    return {
+      ...fallback,
+      error_message: `Backend returned an invalid response (${response.status}).`,
+    };
+  }
+}
+
 export function brandlabBackendUrl(path, searchParams = new URLSearchParams()) {
   const query = searchParams.toString();
   return `${BACKEND_URL}/admin_api/v1/brandlab/${path}${query ? `?${query}` : ""}`;
